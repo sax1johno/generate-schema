@@ -34,7 +34,7 @@ function getNativeType (string) {
 }
 
 module.exports = function Process (object, output) {
-  output = output || {}
+  var output = output || {}
 
   for (var key in object) {
     var value = object[key]
@@ -46,7 +46,7 @@ module.exports = function Process (object, output) {
       type = 'buffer'
     }
 
-    if (typeof value.toString !== 'undefined' && value.toString().match(/^[0-9a-fA-F]{24}$/)) {
+    if (value != null && typeof value.toString !== 'undefined' && value.toString().match(/^[0-9a-fA-F]{24}$/)) {
       type = 'objectid'
     }
 
@@ -54,7 +54,7 @@ module.exports = function Process (object, output) {
       type = Type.string(value).toLowerCase()
     }
 
-    if (type === 'string' && Utils.isDate(value)) {
+    if (type === 'string' && !/^[0-9]+$/.test(value) && Utils.isDate(value)) {
       type = 'date'
     }
 
@@ -82,9 +82,9 @@ module.exports = function Process (object, output) {
       }
 
       if (originalType && originalType === 'array') {
-        output[key] = [getNativeType(type)]
+        output[key] = { type: [getNativeType(type)] }
       } else {
-        output[key] = getNativeType(type)
+        output[key] = { type: getNativeType(type) }
       }
     }
   }

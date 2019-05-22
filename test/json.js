@@ -38,6 +38,18 @@ describe('JSON', function () {
     it('.items.properties.tags should be an object', function () {
       schema.items.properties.tags.should.be.type('object')
     })
+
+    it('.items.properties.id should be of type [integer]', function () {
+      schema.items.properties.id.type.should.equal('integer')
+    })
+
+    it('.items.properties.price should be of type [number]', function () {
+      schema.items.properties.price.type.should.equal('number')
+    })
+
+    it('.items.properties.dimensions.properties.length should be of type [integer, number]', function () {
+      schema.items.properties.dimensions.properties.length.type.should.eql(['integer', 'number'])
+    })
   })
 
   describe('Property Checks', function () {
@@ -55,8 +67,8 @@ describe('JSON', function () {
       schema.properties.should.be.type('object')
     })
 
-    it('.properties.id should be of type [number]', function () {
-      schema.properties.id.type.should.equal('number')
+    it('.properties.id should be of type [integer]', function () {
+      schema.properties.id.type.should.equal('integer')
     })
 
     it('.properties.slug should be of type [string]', function () {
@@ -71,8 +83,9 @@ describe('JSON', function () {
       schema.properties.avatar.type.should.equal('null')
     })
 
-    it('.properties.date should be of type [date]', function () {
-      schema.properties.date.type.should.equal('date')
+    it('.properties.date should be of type [string]', function () {
+      schema.properties.date.type.should.equal('string')
+      schema.properties.date.format.should.equal('date-time')
     })
 
     it('.properties.article should be of type [object]', function () {
@@ -103,8 +116,9 @@ describe('JSON', function () {
       schema.properties.comments.items.should.be.type('object')
     })
 
-    it('.properties.comments.items.properties.body should be of type [string]', function () {
-      schema.properties.comments.items.properties.body.type.should.equal('string')
+    it('.properties.comments.items.properties.body should be of type [string, null]', function () {
+      schema.properties.comments.items.properties.body.type[0].should.equal('string')
+      schema.properties.comments.items.properties.body.type[1].should.equal('null')
     })
   })
 })

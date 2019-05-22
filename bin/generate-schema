@@ -1,20 +1,56 @@
 #!/usr/bin/env node
+
+// Packages
 var GenerateSchema = require('../src/index')
+var cli = require('commander')
 var pkg = require('../package.json')
 var fs = require('fs')
 
-var args = process.argv.slice(2)
-var content = ""
-var mode = "json"
+// Outputs
+var content = ''
+var mode = 'json'
+var quiet = false
+var file = null
 
-// Support various schema generation modes
-if (args[0] === '--generic' || args[0] === '-g') {
-  mode = "generic"
-  args.shift()
-} else if (args[0] === '--mongoose' || args[0] === '-m') {
-  mode = "mongoose"
-  args.shift()
-}
+// Setup CLI
+cli.version(pkg.version)
+cli.usage('[options ...] [file]')
+
+cli.option('-q, --quiet', 'Skip help message in program output', function () { 
+  quiet = true 
+})
+
+cli.option('-g, --generic', 'Generic JSON Primitives schema output', function () { 
+  mode = 'generic' 
+})
+
+cli.option('-j, --json-schema', 'JSON Schema output', function () { 
+  mode = 'json' 
+})
+
+cli.option('-m, --mongoose', 'Mongoose Schema output', function () {
+  mode = 'mongoose'
+})
+
+cli.option('-s, --mysql', 'MySQL Table Schema output', function () {
+  mode = 'mysql'
+})
+
+cli.option('-b, --big-query', 'Google BigQuery Schema output', function () {
+  mode = 'bigquery'
+})
+
+cli.option('-c, --clickhouse', 'ClickHouse Table Schema output', function () {
+  mode = 'clickhouse'
+})
+
+cli.action(function (filename) {
+  file = filename
+})
+
+cli.parse(process.argv)
+
+// Program
 
 function evaluate (data) {
   var obj
@@ -23,7 +59,7 @@ function evaluate (data) {
     obj = JSON.parse(data)
   } catch (e) {
     try {
-      obj = eval("("+data+")")
+      obj = eval('(' + data + ')')
     } catch (e) {
       console.log('Invalid Object or JSON')
     }
@@ -33,40 +69,41 @@ function evaluate (data) {
 }
 
 function prompt (motd) {
-  if (motd) {
-    console.log("Welcome to Generate Schema", pkg.version)
-    console.log(" ")
-    console.log(" ", "Mode:", mode)
-    console.log(" ")
-    console.log("*", "Example Usage: ")
-    console.log(" ", "> {a:'b'}")
-    console.log(" ", "{ a: { type: 'string' } }")
-    console.log(" ")
-    console.log("To quit type: exit")
-    console.log(" ")
+  if (motd && !quiet) {
+    console.log('generate-schema', 'v' + pkg.version, '(' + mode + ')')
+    console.log('Type', '"exit"', 'to quit.')
+    console.log('Type', '{a:"b"}', 'to see an example.')
   }
 
-  process.stdout.write("> ")
+  if (process.stdin.isTTY) {
+    process.stdout.write('> ')
+  }
 }
 
 function callback (data) {
-  if (data == 'exit') {
+  if (data.indexOf('exit') === 0) {
     return process.exit()
   }
 
-  var obj = evaluate(data)
+  var obj
+  obj = evaluate(data)
+  obj = GenerateSchema[mode](obj)
+
+  if (obj && typeof obj === 'object') {
+    obj = JSON.stringify(obj, null, 2)
+  }
 
   if (obj) {
-    console.log(JSON.stringify(GenerateSchema[mode](obj), null, 2))
+    console.log(obj)
   }
 
   prompt()
 }
 
-var stream = process.stdin;
+var stream = process.stdin
 
-if (args[0]) {
-  stream = fs.createReadStream(args[0]);
+if (file) {
+  stream = fs.createReadStream(file)
   stream.on('close', function () {
     process.exit(1)
   })
@@ -74,18 +111,18 @@ if (args[0]) {
 
 stream.setEncoding('utf8')
 
-if (!args.length) {
+if (!file) {
   prompt(true)
 
-  stream.on('data', function(buf) {
+  stream.on('data', function (buf) {
     callback(buf.toString().trim())
   })
 } else {
-  stream.on('data', function(buf) {
+  stream.on('data', function (buf) {
     content += buf.toString()
   })
 
-  stream.on('end', function() {
+  stream.on('end', function () {
     console.log(JSON.stringify(GenerateSchema[mode](evaluate(content)), null, 2))
   })
 }
